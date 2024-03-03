@@ -1,6 +1,10 @@
 data/*
 !data/.gitkeep
 
+lightning_logs/*
+
+nohup.out
+
 slideimgs/
 
 *.zip
