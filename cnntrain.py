@@ -56,8 +56,8 @@ mnist_ds_test, _ = random_split(mnist_ds_test_orig, [0.05, 0.95])
 
 consolidated_ds_train = handiso_ds_train + notmnist_ds_train + stdocr_ds_train + mnist_ds_train
 consolidated_ds_test = handiso_ds_test + notmnist_ds_test + stdocr_ds_test + mnist_ds_test
-trainloader = torch.utils.data.DataLoader(consolidated_ds_train, num_workers=31, batch_size=32)
-testloader = torch.utils.data.DataLoader(consolidated_ds_test, num_workers=31, batch_size=32)
+trainloader = torch.utils.data.DataLoader(consolidated_ds_train, shuffle=True, num_workers=31, batch_size=32)
+testloader = torch.utils.data.DataLoader(consolidated_ds_test, shuffle=True, num_workers=31, batch_size=32)
 
 
 genCNN = utils.GenericCharCNN()
