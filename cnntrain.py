@@ -23,6 +23,8 @@ from torch.utils.data import Dataset, random_split
 from torchvision import datasets
 from torchvision.transforms import v2
 
+torch.set_float32_matmul_precision("high")
+
 def tic():
     return time.time()
 def toc(tstart, name="Operation", printtime=True):
@@ -156,8 +158,8 @@ mnist_ds_test, _ = random_split(mnist_ds_test_orig, [0.05, 0.95])
 consolidated_ds_train = handiso_ds_train + notmnist_ds_train + stdocr_ds_train + mnist_ds_train
 consolidated_ds_test = handiso_ds_test + notmnist_ds_test + stdocr_ds_test + mnist_ds_test
 
-trainloader = torch.utils.data.DataLoader(consolidated_ds_train, num_workers=63, batch_size=8)
-testloader = torch.utils.data.DataLoader(consolidated_ds_test, num_workers=63, batch_size=8)
+trainloader = torch.utils.data.DataLoader(consolidated_ds_train, num_workers=31, batch_size=64)
+testloader = torch.utils.data.DataLoader(consolidated_ds_test, num_workers=31, batch_size=64)
 
 
 class GenericCharCNN(L.LightningModule):
@@ -205,7 +207,7 @@ class GenericCharCNN(L.LightningModule):
 
 
 genCNN = GenericCharCNN()
-trainer = L.Trainer(max_epochs=30)
+trainer = L.Trainer(max_epochs=20)
 trainer.fit(model=genCNN, train_dataloaders=trainloader)
 
 trainer.test(genCNN, dataloaders=testloader)
