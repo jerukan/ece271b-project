@@ -1,27 +1,10 @@
 import os
 from pathlib import Path
-import time
 
-import cv2
 import lightning as L
-import matplotlib.pyplot as plt
-import numpy as np
-from PIL import Image, UnidentifiedImageError
-from sklearn import metrics
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.random_projection import GaussianRandomProjection
-from sklearn.linear_model import LogisticRegression
-from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsClassifier
-import tensorly as tl
 import torch
-from torch import optim, nn, utils, Tensor
-import torch.nn.functional as F
-from torchvision.datasets import MNIST, EMNIST
-from torchvision.transforms import ToTensor
-from torch.utils.data import Dataset, random_split
-from torchvision import datasets
-from torchvision.transforms import v2
+from torchvision.datasets import EMNIST
+from torch.utils.data import random_split
 
 import utils
 
@@ -60,7 +43,8 @@ trainloader = torch.utils.data.DataLoader(consolidated_ds_train, shuffle=True, n
 testloader = torch.utils.data.DataLoader(consolidated_ds_test, shuffle=True, num_workers=31, batch_size=32)
 
 
-genCNN = utils.GenericCharCNN()
+# genCNN = utils.GenericCharCNN()
+genCNN = utils.GenericCharCNN_nopool()
 trainer = L.Trainer(max_epochs=20)
 trainer.fit(model=genCNN, train_dataloaders=trainloader)
 
