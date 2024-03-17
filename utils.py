@@ -17,6 +17,7 @@ import tensorly as tl
 import torch
 from torch import nn, optim
 import torch.nn.functional as F
+from torchvision.models import resnet18
 from torchvision.datasets import MNIST, EMNIST
 from torchvision.transforms import ToTensor
 from torch.utils.data import Dataset, random_split
@@ -132,25 +133,7 @@ def ds_to_vectors(ds, size=28):
     labs = np.array([x[1] for x in ds])
     return imgs, labs
 
-class GenericCharCNN(L.LightningModule):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 4 * 4, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 36)
-
-    def encoder(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
+class CharClassifierMod(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         out = self.encoder(x)
@@ -170,18 +153,35 @@ class GenericCharCNN(L.LightningModule):
         self.log("test_loss", loss)
         self.log("test_acc", acc)
 
+class GenericCharCNN(CharClassifierMod):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 4 * 4, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 36)
+
+    def encoder(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=0.001)
-        # optimizer = optim.SGD(self.parameters(), lr=0.001, momentum=0.9)
         return optimizer
-
 
 class GenericCharCNN_nopool(GenericCharCNN):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 6, 5)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 24 * 24, 120)
+        self.fc1 = nn.Linear(16 * 20 * 20, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 36)
 
@@ -193,3 +193,26 @@ class GenericCharCNN_nopool(GenericCharCNN):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+
+class ResnetTransfered(CharClassifierMod):
+    def __init__(self):
+        super().__init__()
+        backbone = resnet18(weights="DEFAULT")
+        num_filters = backbone.fc.in_features
+        layers = list(backbone.children())[:-1]
+        self.feature_extractor = nn.Sequential(*layers)
+        self.feature_extractor.eval()
+
+        num_target_classes = 36
+        self.classifier = nn.Linear(num_filters, num_target_classes)
+
+    def encoder(self, x):
+        x = x.repeat(1, 3, 1, 1)
+        with torch.no_grad():
+            representations = self.feature_extractor(x).flatten(1)
+        x = self.classifier(representations)
+        return x
+
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        return optimizer
