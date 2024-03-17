@@ -153,6 +153,10 @@ class CharClassifierMod(L.LightningModule):
         self.log("test_loss", loss)
         self.log("test_acc", acc)
 
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        return optimizer
+
 class GenericCharCNN(CharClassifierMod):
     def __init__(self):
         super().__init__()
@@ -172,11 +176,7 @@ class GenericCharCNN(CharClassifierMod):
         x = self.fc3(x)
         return x
 
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
-        return optimizer
-
-class GenericCharCNN_nopool(GenericCharCNN):
+class GenericCharCNN_nopool(CharClassifierMod):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 6, 5)
@@ -212,7 +212,3 @@ class ResnetTransfered(CharClassifierMod):
             representations = self.feature_extractor(x).flatten(1)
         x = self.classifier(representations)
         return x
-
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
-        return optimizer
